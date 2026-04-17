@@ -97,14 +97,19 @@ def root():
 
 
 @app.post("/ask")
-async def ask_agent(request: Request):
-    body = await request.json()
-    question = body.get("question", "")
+async def ask_agent(request: Request, question: str = None):
+    # Nếu không thấy question trong URL, thử tìm trong JSON body
+    if not question:
+        try:
+            body = await request.json()
+            question = body.get("question")
+        except:
+            pass
 
     if not question:
-        raise HTTPException(status_code=422, detail="question field is required")
+        raise HTTPException(status_code=422, detail="question field is required (in query or body)")
 
-    # ✅ Structured logging — KHÔNG log secrets
+    # ✅ Structured logging
     logger.info(json.dumps({
         "event": "agent_request",
         "question_length": len(question),

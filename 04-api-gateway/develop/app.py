@@ -22,6 +22,7 @@ Test:
 import os
 
 
+from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Security, Depends
 from fastapi.security.api_key import APIKeyHeader
 import uvicorn
@@ -55,6 +56,13 @@ def verify_api_key(api_key: str = Security(api_key_header)) -> str:
 
 
 # ──────────────────────────────────────
+# Request Model
+# ──────────────────────────────────────
+
+class AskRequest(BaseModel):
+    question: str
+
+# ──────────────────────────────────────
 # Endpoints
 # ──────────────────────────────────────
 
@@ -66,13 +74,13 @@ def root():
 
 @app.post("/ask")
 async def ask_agent(
-    question: str,
+    body: AskRequest,                  # ✅ Nhận JSON Body
     _key: str = Depends(verify_api_key),  # ✅ require auth
 ):
     """Protected endpoint — cần X-API-Key header"""
     return {
-        "question": question,
-        "answer": ask(question),
+        "question": body.question,
+        "answer": ask(body.question),
     }
 
 
@@ -85,5 +93,6 @@ def health():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     print(f"API Key: {API_KEY}")
-    print(f"Test: curl -H 'X-API-Key: {API_KEY}' http://localhost:{port}/ask?question=hello")
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
+    print(f"Test: curl -H 'X-API-Key: {API_KEY}' -X POST -H 'Content-Type: application/json' -d '{{\"question\": \"hello\"}}' http://localhost:{port}/ask")
+    # Sử dụng chuỗi "app:app" để uvicorn có thể reload
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)

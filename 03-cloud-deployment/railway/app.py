@@ -32,9 +32,10 @@ def root():
 
 
 @app.post("/ask")
-async def ask_agent(request: Request):
-    body = await request.json()
-    question = body.get("question", "")
+async def ask_agent(request: Request,question: str =None):
+    if question is None:
+        body = await request.json()
+        question = body.get("question", "")
     if not question:
         raise HTTPException(422, "question required")
     return {
